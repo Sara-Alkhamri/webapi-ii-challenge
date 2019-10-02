@@ -69,7 +69,7 @@ router.delete('/:id', (req, res) => {
     })
 })
 
-//get api/posts/:id/comments
+//get api/posts/:post_id/comments
 router.get('/:post_id/comments', (req, res) => {
     const {post_id} = req.params;
     db.findById(post_id)
@@ -87,6 +87,56 @@ router.get('/:post_id/comments', (req, res) => {
     });
     
 })
+
+//post api/posts/:post_id/comments
+router.post('/:post_id/comments', (req, res) => {
+    const {post_id} =req.params;
+    const text = req.body.text;
+    // insertComment(): calling insertComment while passing it a comment object will add it to the database and return an object with the id of the inserted comment. The object looks like this: { id: 123 }. This method will throw an error if the post_id field 
+    // in the comment object does not match a valid post id in the database.
+    db.insertComment({text, post_id})
+    .then(comment => {
+        res.status(200).json(comment);
+    })
+    .catch(error => {
+        res.status(500).json({error: "There was an error while saving the comment to the database" })
+    })
+})
+
+//put
+router.put('/:id', (req, res) => {
+    const id = req.params.id;
+    const title = req.body.title;
+    const contents = req.body.contents;
+    if (!title && !contents) {
+        return res.status(400).json({ errorMessage: "Please provide title and contents for the post." });
+    }
+    db.update(id, { title, contents })
+        .then(updated => {
+            console.log(updated);
+            if (updated) {
+                db.findById(id)
+                    .then(post => {
+                        console.log(post);
+                        if (post.length) {
+                            res.status(200).json(post);
+                        } else {
+                            res.status(404).json({ message: "The post with the specified ID does not exist." });
+                        }
+                    })
+                    .catch(error => {
+                        console.log(error);
+                        res.status(500).json({ error: "There was an error while getting the post from the database." });
+                    });
+            } else {
+                res.status(404).json({ message: "The post with the specified ID does not exist." });
+            }
+        })
+        .catch(error => {
+            console.log(error);
+            res.status(500).json({ error: "There was an error while updating the post to the database." });
+        });
+});
 
 
 
