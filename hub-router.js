@@ -1,30 +1,25 @@
 const db = require('./data/db');
 const express = require('express');
 
-const server = express();
-server.use(express.json());
-
-
-server.get('/', (req,res) => {
-    res.status(200).json({api: "api running"})
-})
+const router = express.Router();
+// server.use(express.json());
 
 // get api/posts/
-server.get('/api/posts', (req, res) => {
+router.get('/', (req, res) => {
     db.find()
-    .then((db) => {
-        res.status(200).json(db)
-    })
+    .then(posts => res.status(200).json(posts))
     .catch((error) => {
         res.status(500).json({error: "The posts information could not be retrieved."})
     })
 })
 
 //post api/posts/
-server.post('/api/posts', (req, res) => {
+router.post('/', (req, res) => {
     const addPost = req.body;
     const {tilte, contents} = req.body;
     if (tilte, contents) {
+        //insert(): calling insert passing it a post object will add it to the database and return an object with
+        //the id of the inserted post. The object looks like this: { id: 123 }
         db.insert(addPost)
         .then(db => {
             res.status(201).json(db)
@@ -38,7 +33,7 @@ server.post('/api/posts', (req, res) => {
 })
 
 //get api/posts/:id/
-server.get('/api/posts/:id', (req, res) => {
+router.get('/:id', (req, res) => {
     const id = req.params.id;
     db.findById(id)
     .then((byId) => {
@@ -54,7 +49,7 @@ server.get('/api/posts/:id', (req, res) => {
 })
 
 //delete /api/posts/id
-server.delete('/api/posts/:id', (req, res) => {
+router.delete('/:id', (req, res) => {
     const id = req.params.id;
     db.findById(id)
     .then((byId) => {
@@ -74,6 +69,31 @@ server.delete('/api/posts/:id', (req, res) => {
     })
 })
 
+//get api/posts/:id/comments
+router.get('/:id/comments', (req, res) => {
+    const id = req.params.id;
+    db.findById(id)
+    .then((response) => {
+        if(response.length == 0) {
+            res.status(404).json({message: "The post with the specified ID does not exist."})
+        }
+        return response;
+    })
+    .then(
+        db.findPostComments(id)
+        .then((response) => {
+            if(response.length > 0) {
+                res.status(200).json(response);
+            } else {
+                res.status(404).json({message: "The post with the specified ID does not exist."})
+            }
+        })
+        .catch((error) => {
+            res.status(500).json({error: "The comments information could not be retrieved."})
+        })
+    )
+    
+})
 
 
 
@@ -92,4 +112,5 @@ server.delete('/api/posts/:id', (req, res) => {
 
 
 
-module.exports = server;
+
+module.exports = router;
